@@ -3,11 +3,9 @@
 #define DHTPIN 2
 #define DHTTYPE DHT11
 
-#define LED_RED 4
-#define LED_GREEN 3
+#define RELAY 10
 
-#define TEMP_HIGH 22.0
-#define TEMP_LOW 19.0
+#define TEMP_HIGH 21.0
 
 DHT dht(DHTPIN, DHTTYPE);
 
@@ -15,8 +13,7 @@ void setup() {
   Serial.begin(9600);
   dht.begin();
 
-  pinMode(LED_RED, OUTPUT);
-  pinMode(LED_GREEN, OUTPUT);
+  pinMode(RELAY, OUTPUT);
 }
 
 void loop() {
@@ -25,19 +22,12 @@ void loop() {
   Serial.println(temp);
 
   if (temp > TEMP_HIGH) {
-    digitalWrite(LED_RED, HIGH);
-    digitalWrite(LED_GREEN, LOW);
+    digitalWrite(RELAY, HIGH);
     //Serial.println("LED_RED_ON");
   }
-  else if (temp >= TEMP_LOW && temp <= TEMP_HIGH) {
-    digitalWrite(LED_RED, LOW);
-    digitalWrite(LED_GREEN, HIGH);
-    //Serial.println("LED_GREEN_ON");
-  }
   else {
-    digitalWrite(LED_RED, LOW);
-    digitalWrite(LED_GREEN, LOW);
-    //Serial.println("LED_OFF");
+    digitalWrite(RELAY, LOW);
+    //Serial.println("LED_GREEN_ON");
   }
 
   delay(1000);
