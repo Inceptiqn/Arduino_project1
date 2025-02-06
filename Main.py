@@ -23,7 +23,7 @@ def app():
         draw_circle(400,300,50+valore,RED)
         draw_text(f"valore={valore}", 190, 200, 20, VIOLET)
         end_drawing()
-    close_window()
+        close_window()
 
 if __name__ == "__main__":
     mp.freeze_support()
