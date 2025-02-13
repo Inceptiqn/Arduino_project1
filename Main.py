@@ -1,53 +1,68 @@
 import serial as sr
-import multiprocessing as mp
+import threading
+import queue
 import dearpygui.dearpygui as dpg
+import time
 
-def serial_task(queue: mp.Queue):
-    serial_conn = sr.Serial("COM11", 9600)
+nsamples = 100  # Number of samples to display
+
+
+def serial_task(q: queue.Queue):
+    serial_conn = sr.Serial("COM7", 9600)
     while True:
-        data = serial_conn.readline()
-        data = data.decode("utf-8").strip()
+        data = serial_conn.readline().decode("utf-8").strip()
         try:
-            valore = float(data)
-            queue.put(valore)
+            temp, hum = map(float, data.split(","))
+            q.put((time.time(), temp, hum))
         except ValueError:
-            pass  # Ignora dati non validi
+            print("Error: Invalid data format")
 
-def app():
-    q = mp.Queue()
-    serial_process = mp.Process(target=serial_task, args=(q,))
-    serial_process.start()
 
-    valore = 0.0
-    valori = []
+def graphics_task(q: queue.Queue):
     dpg.create_context()
-    dpg.create_viewport(title="Serial Data Visualization", width=800, height=450)
 
-    with dpg.window(label="Main Window", width=800, height=450):
-        dpg.add_text("Valore:")
-        text_id = dpg.add_text(f"{valore}")
-        with dpg.plot(label="Serial Data Graph", height=200, width=700):
-            dpg.add_plot_axis(dpg.mvXAxis, label="Time", tag="x_axis")
-            y_axis = dpg.add_plot_axis(dpg.mvYAxis, label="Value", tag="y_axis")
-            series_id = dpg.add_line_series([], [], parent=y_axis)
+    time_data = []  # Time stamps
+    temp_data = []  # Temperature values
+    hum_data = []  # Humidity values
 
+    def update_series():
+        if not q.empty():
+            timestamp, temp, hum = q.get()
+            time_data.append(timestamp)
+            temp_data.append(temp)
+            hum_data.append(hum)
+
+            # Keep only the latest nsamples data points
+            if len(time_data) > nsamples:
+                time_data.pop(0)
+                temp_data.pop(0)
+                hum_data.pop(0)
+
+            dpg.set_value('temp_series', [time_data, temp_data])
+            dpg.set_value('hum_series', [time_data, hum_data])
+
+    with dpg.window(label="Sensor Data", tag="win"):
+        dpg.add_button(label="Update Series", callback=update_series)
+        with dpg.plot(label="Sensor Readings", height=400, width=600):
+            dpg.add_plot_legend()
+            dpg.add_plot_axis(dpg.mvXAxis, label="Time (s)")
+            dpg.add_plot_axis(dpg.mvYAxis, label="Value", tag="y_axis")
+            dpg.add_line_series([], [], label="Temperature (°C)", parent="y_axis", tag="temp_series")
+            dpg.add_line_series([], [], label="Humidity (%)", parent="y_axis", tag="hum_series")
+
+    dpg.create_viewport(title='Real-Time Sensor Data', width=800, height=600)
     dpg.setup_dearpygui()
     dpg.show_viewport()
-
-    while dpg.is_dearpygui_running():
-        if not q.empty():
-            valore = q.get()
-            valori.append(valore)
-            if len(valori) > 50:
-                valori.pop(0)
-            dpg.set_value(text_id, f"Valore: {valore}")
-            dpg.set_value(series_id, [list(range(len(valori))), valori])
-        dpg.render_dearpygui_frame()
-
+    dpg.start_dearpygui()
     dpg.destroy_context()
-    serial_process.terminate()
-    serial_process.join()
+
+
+def main():
+    q = queue.Queue()
+    serial_thread = threading.Thread(target=serial_task, args=(q,), daemon=True)
+    serial_thread.start()
+    graphics_task(q)
+
 
 if __name__ == "__main__":
-    mp.freeze_support()
-    app()
+    main()
