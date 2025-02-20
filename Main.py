@@ -1,7 +1,6 @@
 import serial as sr
 import threading
 import dearpygui.dearpygui as dpg
-import time
 
 time_list = []
 dataT_list = []
