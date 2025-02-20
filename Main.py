@@ -3,7 +3,6 @@ import threading
 import dearpygui.dearpygui as dpg
 import time
 
-# Global lists for storing real-time data
 time_list = []
 dataT_list = []
 dataU_list = []
@@ -25,13 +24,11 @@ def Serial():
             hum = float(datasplit[1])
             print(f"Temperature: {temp} °C, Humidity: {hum} %")
 
-            # Append new data to lists
             dataT_list.append(temp)
             dataU_list.append(hum)
             time_list.append(count)
             count += 1
 
-            # Keep only the latest `nsamples` data points
             if len(time_list) > nsamples:
                 dataT_list.pop(0)
                 dataU_list.pop(0)
