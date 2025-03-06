@@ -3,7 +3,7 @@
 #define DHTTYPE DHT11
 
 #define RELAY 10
-#define TEMP_HIGH 24.0
+#define TEMP_HIGH 21.0
 
 DHT dht(DHTPIN, DHTTYPE);
 
